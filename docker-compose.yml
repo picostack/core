@@ -1,0 +1,193 @@
+version: "3.5"
+
+networks:
+  default:
+    external:
+      name: gateway
+
+  prometheus:
+    driver: bridge
+    internal: true
+
+services:
+  watchtower:
+    image: containrrr/watchtower
+    command: --label-enable --interval=30
+    restart: on-failure
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  traefik:
+    image: traefik:v2.1
+    command:
+      - --global.checkNewVersion=true
+      - --global.sendAnonymousUsage
+      - --log.level=INFO
+      - --api=true
+
+      - --providers.docker
+      - --providers.docker.exposedByDefault=false
+
+      # Explicitly set the active network as the gateway network which is
+      # created externally via a docker command:
+      #   docker network create \
+      #     --driver=bridge \
+      #     --attachable \
+      #     --internal=false \
+      #     gateway
+      - --providers.docker.network=gateway
+
+      - --entryPoints.http.address=:80
+      - --entryPoints.https.address=:443
+
+      # Use LetsEncrypt as a certificate resolver for HTTPS.
+      - --certificatesresolvers.default.acme.httpchallenge=true
+      - --certificatesResolvers.default.acme.httpChallenge.entryPoint=http
+      - --certificatesResolvers.default.acme.email=${ACME_EMAIL:?required}
+      - --certificatesResolvers.default.acme.storage=/etc/traefik/acme/acme.json
+      - --certificatesResolvers.default.acme.caServer=${CA_SERVER:?required}
+      # Expose Prometheus metrics
+      - --metrics.prometheus=true
+      - --entryPoints.metrics.address=:8080
+      - --metrics.prometheus.entryPoint=metrics
+
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR:?required}/traefik/acme:/etc/traefik/acme
+    labels:
+      traefik.enable: true
+
+      # Force HTTPS
+      traefik.http.routers.https-redirect.entrypoints: http
+      traefik.http.routers.https-redirect.rule: HostRegexp(`{host:.+}`)
+      traefik.http.routers.https-redirect.middlewares: force_https
+      traefik.http.middlewares.force_https.redirectscheme.scheme: https
+      traefik.http.middlewares.force_https.redirectscheme.permanent: true
+
+      # Traefik API endpoint router with some basic auth middleware.
+      traefik.http.routers.api.rule: Host(`traefik-${HOSTNAME:?required}.${DOMAIN_NAME:?required}`)
+      traefik.http.routers.api.entrypoints: https,http
+      traefik.http.routers.api.service: api@internal
+      traefik.http.routers.api.middlewares: api_auth
+      traefik.http.routers.api.tls: true
+      traefik.http.middlewares.api_auth.basicauth.users: ${HTTP_AUTH:?required}
+
+  portainer:
+    image: portainer/portainer:latest
+    restart: always
+    ports:
+      - 9000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DATA_DIR}/portainer_data:/data
+    networks:
+      - default
+    labels:
+      traefik.enable: true
+      traefik.docker.network: gateway
+      traefik.http.routers.portainer.rule: Host(`portainer-${HOSTNAME}.${DOMAIN_NAME}`)
+      traefik.http.routers.portainer.entrypoints: https
+      traefik.http.routers.portainer.tls.certresolver: default
+      com.centurylinklabs.watchtower.enable: true
+
+  node-exporter:
+    image: "prom/node-exporter"
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.ignored-mount-points
+      - ^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)
+    restart: always
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - prometheus
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  cadvisor:
+    image: "google/cadvisor"
+    command:
+      - --allow_dynamic_housekeeping=true
+      - --global_housekeeping_interval=1m
+      - --housekeeping_interval=30s
+    restart: always
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - default
+      - prometheus
+    labels:
+      traefik.enable: true
+      traefik.docker.network: gateway
+      traefik.http.routers.cadvisor.rule: Host(`cadvisor-${HOSTNAME}.${DOMAIN_NAME}`)
+      traefik.http.routers.cadvisor.entrypoints: https
+      traefik.http.routers.cadvisor.tls.certresolver: default
+      com.centurylinklabs.watchtower.enable: true
+
+  prometheus:
+    image: "prom/prometheus"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/usr/share/prometheus/console_libraries
+      - --web.console.templates=/usr/share/prometheus/consoles
+    restart: always
+    volumes:
+      - ${DATA_DIR}/prometheus:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - default
+      - prometheus
+    labels:
+      traefik.enable: true
+      traefik.docker.network: gateway
+      traefik.http.routers.prometheus.rule: Host(`prometheus-${HOSTNAME}.${DOMAIN_NAME}`)
+      traefik.http.routers.prometheus.entrypoints: https
+      traefik.http.routers.prometheus.tls.certresolver: default
+      com.centurylinklabs.watchtower.enable: true
+
+  grafana:
+    image: grafana/grafana
+    restart: always
+    user: "0"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_NAME: Grafana
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_SERVER_ROOT_URL: https://grafana-${HOSTNAME}.${DOMAIN_NAME}
+    volumes:
+      - ${DATA_DIR}/grafana:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+      - ./grafana/plugins/:/var/lib/grafana/plugins/
+    networks:
+      - default
+      - prometheus
+    depends_on:
+      - prometheus
+    labels:
+      traefik.enable: true
+      traefik.docker.network: gateway
+      traefik.http.routers.grafana.rule: Host(`grafana-${HOSTNAME}.${DOMAIN_NAME}`)
+      traefik.http.routers.grafana.entrypoints: https
+      traefik.http.routers.grafana.tls.certresolver: default
+      com.centurylinklabs.watchtower.enable: true
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - 3100:3100
+    entrypoint: /usr/bin/loki -config.file=/etc/loki/local-config.yaml
+    networks:
+      - default
+    volumes:
+      - ./loki/local-config.yaml:/etc/loki/local-config.yaml
+      - ${DATA_DIR}/loki:/data/loki

@@ -1,0 +1,4 @@
+[submodule "grafana/plugins/piechart-panel"]
+	path = grafana/plugins/piechart-panel
+	url = https://github.com/grafana/piechart-panel.git
+	branch = release-1.4.0

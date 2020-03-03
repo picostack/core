@@ -32,7 +32,7 @@ DATA_DIR=/data/shared
 DOMAIN_NAME=myawesomeproject.com
 ACME_EMAIL=admin@myawesomeproject.com
 CA_SERVER=https://acme-v02.api.letsencrypt.org/directory
-CORE_SERVICES_BASIC_AUTH=$2a$11$4/ET4dmxtvpW1mgvc9F8qus.gNb9MMFxOxfRGLDA02wACCIIfCYnC
+HTTP_AUTH=$2a$11$4/ET4dmxtvpW1mgvc9F8qus.gNb9MMFxOxfRGLDA02wACCIIfCYnC
 ```
 
 #### `HOSTNAME`
@@ -75,7 +75,7 @@ Live:
 CA_SERVER=https://acme-v02.api.letsencrypt.org/directory
 ```
 
-#### `BASIC_AUTH`
+#### `HTTP_AUTH`
 
 A HTTP basic auth string to use as a login for all the running services with a web interface.
 
@@ -91,7 +91,7 @@ The compose configuration uses the convention `service-hostname.domain`. So, let
 
 ## Auth
 
-Both Grafana and Portainer have built-in user systems. The rest will use the `BASIC_AUTH` to set a basic HTTP login via Traefik.
+Both Grafana and Portainer have built-in user systems. The rest will use the `HTTP_AUTH` to set a basic HTTP login via Traefik.
 
 When you first open Grafana, log in with `admin`/`admin` then change the password.
 
