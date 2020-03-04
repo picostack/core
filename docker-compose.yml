@@ -68,10 +68,10 @@ services:
 
       # Traefik API endpoint router with some basic auth middleware.
       traefik.http.routers.api.rule: Host(`traefik-${HOSTNAME:?required}.${DOMAIN_NAME:?required}`)
-      traefik.http.routers.api.entrypoints: https,http
+      traefik.http.routers.api.entrypoints: https
       traefik.http.routers.api.service: api@internal
       traefik.http.routers.api.middlewares: api_auth
-      traefik.http.routers.api.tls: true
+      traefik.http.routers.api.tls.certresolver: default
       traefik.http.middlewares.api_auth.basicauth.users: ${HTTP_AUTH:?required}
 
   portainer:
