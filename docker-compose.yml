@@ -40,7 +40,7 @@ services:
       - --entryPoints.https.address=:443
 
       # Use LetsEncrypt as a certificate resolver for HTTPS.
-      - --certificatesresolvers.default.acme.httpchallenge=true
+      - --certificatesresolvers.default.acme.httpChallenge=true
       - --certificatesResolvers.default.acme.httpChallenge.entryPoint=http
       - --certificatesResolvers.default.acme.email=${ACME_EMAIL:?required}
       - --certificatesResolvers.default.acme.storage=/etc/traefik/acme/acme.json
