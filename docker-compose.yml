@@ -21,7 +21,6 @@ services:
     image: traefik:v2.1
     command:
       - --global.checkNewVersion=true
-      - --global.sendAnonymousUsage
       - --log.level=INFO
       - --api=true
 
