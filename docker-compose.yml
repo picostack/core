@@ -130,6 +130,7 @@ services:
       traefik.http.routers.cadvisor.rule: Host(`cadvisor-${HOSTNAME}.${DOMAIN_NAME}`)
       traefik.http.routers.cadvisor.entrypoints: https
       traefik.http.routers.cadvisor.tls.certresolver: default
+      traefik.http.routers.cadvisor.middlewares: api_auth
       com.centurylinklabs.watchtower.enable: true
 
   prometheus:
@@ -152,6 +153,7 @@ services:
       traefik.http.routers.prometheus.rule: Host(`prometheus-${HOSTNAME}.${DOMAIN_NAME}`)
       traefik.http.routers.prometheus.entrypoints: https
       traefik.http.routers.prometheus.tls.certresolver: default
+      traefik.http.routers.prometheus.middlewares: api_auth
       com.centurylinklabs.watchtower.enable: true
 
   grafana:
