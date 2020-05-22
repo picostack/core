@@ -13,7 +13,7 @@ services:
   watchtower:
     image: containrrr/watchtower:0.3.11
     command: --label-enable --interval=30
-    restart: on-failure
+    restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -50,6 +50,7 @@ services:
       - --entryPoints.metrics.address=:8080
       - --metrics.prometheus.entryPoint=metrics
 
+    restart: always
     ports:
       - 80:80
       - 443:443
@@ -184,6 +185,7 @@ services:
 
   loki:
     image: grafana/loki:1.4.1
+    restart: always
     ports:
       - 3100:3100
     entrypoint: /usr/bin/loki -config.file=/etc/loki/local-config.yaml
