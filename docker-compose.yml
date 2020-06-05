@@ -184,7 +184,7 @@ services:
       com.centurylinklabs.watchtower.enable: true
 
   loki:
-    image: grafana/loki:1.4.1
+    image: grafana/loki:1.5.0
     restart: always
     ports:
       - 3100:3100
