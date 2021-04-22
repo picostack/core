@@ -16,6 +16,7 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ${HOME}/.docker/config.json:/config.json
 
   traefik:
     image: traefik:v2.1
