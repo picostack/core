@@ -2,8 +2,8 @@ version: "3.5"
 
 networks:
   default:
-    external:
-      name: gateway
+    external: true
+    name: gateway
 
   prometheus:
     driver: bridge
@@ -16,7 +16,6 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - /root/.docker/config.json:/config.json
 
   traefik:
     image: traefik:v2.1
@@ -59,14 +58,14 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DATA_DIR:?required}/traefik/acme:/etc/traefik/acme
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
 
       # Force HTTPS
       traefik.http.routers.https-redirect.entrypoints: http
       traefik.http.routers.https-redirect.rule: HostRegexp(`{host:.+}`)
       traefik.http.routers.https-redirect.middlewares: force_https
       traefik.http.middlewares.force_https.redirectscheme.scheme: https
-      traefik.http.middlewares.force_https.redirectscheme.permanent: true
+      traefik.http.middlewares.force_https.redirectscheme.permanent: "true"
 
       # Traefik API endpoint router with some basic auth middleware.
       traefik.http.routers.api.rule: Host(`traefik-${HOSTNAME:?required}.${DOMAIN_NAME:?required}`)
@@ -74,7 +73,7 @@ services:
       traefik.http.routers.api.service: api@internal
       traefik.http.routers.api.middlewares: api_auth
       traefik.http.routers.api.tls.certresolver: default
-      traefik.http.middlewares.api_auth.basicauth.users: ${HTTP_AUTH:?required}
+      traefik.http.middlewares.api_auth.basicauth.users: "${HTTP_AUTH:?required}"
 
   portainer:
     image: portainer/portainer:1.23.2
@@ -87,12 +86,12 @@ services:
     networks:
       - default
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
       traefik.docker.network: gateway
       traefik.http.routers.portainer.rule: Host(`portainer-${HOSTNAME}.${DOMAIN_NAME}`)
       traefik.http.routers.portainer.entrypoints: https
       traefik.http.routers.portainer.tls.certresolver: default
-      com.centurylinklabs.watchtower.enable: true
+      com.centurylinklabs.watchtower.enable: "true"
 
   node-exporter:
     image: prom/node-exporter:v0.18.1
@@ -127,13 +126,13 @@ services:
       - default
       - prometheus
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
       traefik.docker.network: gateway
       traefik.http.routers.cadvisor.rule: Host(`cadvisor-${HOSTNAME}.${DOMAIN_NAME}`)
       traefik.http.routers.cadvisor.entrypoints: https
       traefik.http.routers.cadvisor.tls.certresolver: default
       traefik.http.routers.cadvisor.middlewares: api_auth
-      com.centurylinklabs.watchtower.enable: true
+      com.centurylinklabs.watchtower.enable: "true"
 
   prometheus:
     image: prom/prometheus:v2.18.1
@@ -150,13 +149,13 @@ services:
       - default
       - prometheus
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
       traefik.docker.network: gateway
       traefik.http.routers.prometheus.rule: Host(`prometheus-${HOSTNAME}.${DOMAIN_NAME}`)
       traefik.http.routers.prometheus.entrypoints: https
       traefik.http.routers.prometheus.tls.certresolver: default
       traefik.http.routers.prometheus.middlewares: api_auth
-      com.centurylinklabs.watchtower.enable: true
+      com.centurylinklabs.watchtower.enable: "true"
 
   grafana:
     image: grafana/grafana:6.7.2
@@ -177,12 +176,12 @@ services:
     depends_on:
       - prometheus
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
       traefik.docker.network: gateway
       traefik.http.routers.grafana.rule: Host(`grafana-${HOSTNAME}.${DOMAIN_NAME}`)
       traefik.http.routers.grafana.entrypoints: https
       traefik.http.routers.grafana.tls.certresolver: default
-      com.centurylinklabs.watchtower.enable: true
+      com.centurylinklabs.watchtower.enable: "true"
 
   loki:
     image: grafana/loki:1.4.1
