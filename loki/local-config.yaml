@@ -45,3 +45,7 @@ storage_config:
 table_manager:
   retention_deletes_enabled: true
   retention_period: 120h
+
+compactor:
+  working_directory: /data/loki/compactor
+  shared_store: filesystem
