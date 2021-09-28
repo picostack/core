@@ -22,7 +22,7 @@
   "editable": true,
   "gnetId": 893,
   "graphTooltip": 1,
-  "iteration": 1632570866388,
+  "iteration": 1632845974785,
   "links": [],
   "panels": [
     {
@@ -1144,8 +1144,10 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "-sum(rate(node_disk_bytes_read[$interval])) by (device)",
+          "exemplar": true,
+          "expr": "-sum(rate(node_disk_read_bytes_total[$interval])) by (device)",
           "hide": false,
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "OUT on /{{device}}",
           "metric": "node_disk_bytes_read",
@@ -1153,7 +1155,9 @@
           "step": 600
         },
         {
-          "expr": "sum(rate(node_disk_bytes_written[$interval])) by (device)",
+          "exemplar": true,
+          "expr": "sum(rate(node_disk_written_bytes_total[$interval])) by (device)",
+          "interval": "",
           "intervalFactor": 2,
           "legendFormat": "IN on /{{device}}",
           "metric": "",
@@ -2142,7 +2146,7 @@
           ]
         },
         "datasource": "Prometheus",
-        "definition": "",
+        "definition": "label_values(node_boot_time_seconds, instance)",
         "description": null,
         "error": null,
         "hide": 0,
@@ -2152,8 +2156,8 @@
         "name": "server",
         "options": [],
         "query": {
-          "query": "label_values(node_boot_time, instance)",
-          "refId": "Prometheus-server-Variable-Query"
+          "query": "label_values(node_boot_time_seconds, instance)",
+          "refId": "StandardVariableQuery"
         },
         "refresh": 1,
         "regex": "/([^:]+):.*/",
@@ -2198,5 +2202,5 @@
   "timezone": "browser",
   "title": "Docker and System",
   "uid": "ktyONWdmk",
-  "version": 1
+  "version": 2
 }
