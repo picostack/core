@@ -10,6 +10,7 @@ datasources:
     access: proxy
     url: http://prometheus:9090
     editable: true
+    timeInterval: 30s
   - name: Loki
     type: loki
     access: proxy
